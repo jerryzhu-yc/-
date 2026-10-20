@@ -1,144 +1,92 @@
-# 机器人动力学从零开始
+# 机器人动力学：从建模到控制
 
-一个面向初学者的中文教程与可运行 Python 仓库。主线：
+> 一本面向初学者、强调推导与可运行代码对应关系的中文开源教材。
 
-> 数学直觉 → 单摆 → 二连杆机械臂 → 拉格朗日建模 → 正/逆动力学 → 动力学控制
+本书从向量、坐标系和牛顿定律出发，逐步建立串联机械臂的运动学与动力学模型，最后实现数值仿真、轨迹跟踪和计算力矩控制。正文使用统一符号、章末小结、例题和习题；代码使用 Python、NumPy 与 Matplotlib。
 
-## 你将学会
+## 阅读目标
 
-- 理解位形 `q`、速度 `dq`、加速度 `ddq` 和关节力矩 `tau`
-- 用动能、势能和拉格朗日方程推导动力学
-- 理解标准方程 `M(q)ddq + c(q,dq) + g(q) = tau`
-- 实现正动力学、逆动力学和 RK4 数值积分
-- 仿真单摆和二维二连杆机械臂
-- 实现重力补偿、PD 与计算力矩控制
+完成本书后，你应该能够：
 
-## 0. 动力学研究什么？
+1. 建立刚体坐标系并使用旋转矩阵、齐次变换描述位姿；
+2. 推导速度雅可比矩阵并解释奇异位形；
+3. 使用拉格朗日法和牛顿–欧拉法建立机器人动力学；
+4. 理解机械臂标准方程及其结构性质；
+5. 编写正动力学、逆动力学和数值积分程序；
+6. 实现重力补偿、PD 与计算力矩控制。
 
-运动学回答“机器人在哪里、怎样运动”；动力学回答“为什么这样运动，以及需要多大力矩”。对 n 个关节：
+## 目录
 
-- `q ∈ Rⁿ`：关节位置
-- `dq ∈ Rⁿ`：关节速度
-- `ddq ∈ Rⁿ`：关节加速度
-- `tau ∈ Rⁿ`：执行器力矩
+### 第一篇　数学与运动学基础
 
-机器人方程写成：
+- [第 0 章　前言与学习路线](book/00-preface.md)
+- [第 1 章　数学与经典力学基础](book/01-math-mechanics.md)
+- [第 2 章　刚体位姿与坐标变换](book/02-rigid-body-kinematics.md)
+- [第 3 章　速度、雅可比与奇异性](book/03-jacobian.md)
 
-`M(q)ddq + c(q,dq) + g(q) + B dq = tau`
+### 第二篇　机器人动力学建模
 
-其中 `M` 是惯性矩阵，`c` 是科里奥利/离心项，`g` 是重力项，`B dq` 是粘性摩擦。
+- [第 4 章　刚体惯性与能量](book/04-inertia-energy.md)
+- [第 5 章　拉格朗日动力学](book/05-lagrange.md)
+- [第 6 章　牛顿–欧拉递推法](book/06-newton-euler.md)
+- [第 7 章　机械臂动力学标准形式](book/07-manipulator-equation.md)
 
-## 1. 必备数学与物理
+### 第三篇　仿真与控制
 
-向量是一组有顺序的数，矩阵可以看作把一个向量映射到另一个向量的线性规则。时间导数描述变化率：
+- [第 8 章　正/逆动力学与数值仿真](book/08-simulation.md)
+- [第 9 章　关节空间动力学控制](book/09-control.md)
+- [第 10 章　进阶主题与学习路线](book/10-advanced-topics.md)
 
-`dq = dq/dt`，`ddq = d²q/dt²`。
+### 附录
 
-平移运动服从 `F = ma`；转动运动服从 `tau = I alpha`。功率为 `P = tau·dq`，动能为 `T`，重力势能为 `V`。
+- [附录 A　符号、单位与约定](book/appendix-a-notation.md)
+- [附录 B　章末习题参考答案](book/appendix-b-solutions.md)
 
-## 2. 第一个模型：单摆
+## 章节与代码对应
 
-设质量 `m` 集中在长度 `l` 的无质量杆末端，角度从水平 x 轴逆时针计算：
+| 内容 | 主要代码 | 运行方式 |
+|---|---|---|
+| RK4 数值积分 | `rk4_step`, `simulate` | `pytest` |
+| 单摆正/逆动力学 | `Pendulum` | `python robot_dynamics.py pendulum` |
+| 二连杆惯性、科氏与重力项 | `TwoLinkArm` | `python robot_dynamics.py gravity` |
+| 重力补偿 | `demo_gravity` | `python robot_dynamics.py gravity` |
+| 计算力矩控制 | `computed_torque` | `python robot_dynamics.py control` |
+| 物理与数值性质验证 | `test_robot_dynamics.py` | `pytest -q` |
 
-`m l² ddq + b dq + m g l cos(q) = tau`
+## 快速开始
 
-因此：
-
-- 正动力学：已知状态和力矩，求 `ddq`
-- 逆动力学：已知期望运动，求 `tau`
-- 静止时重力补偿：`tau = m g l cos(q)`
-
-若无阻尼、无外力，机械能 `E = 1/2 m l² dq² + m g l sin(q)` 应保持不变。这是检查仿真是否正确的重要工具。
-
-## 3. 拉格朗日方法
-
-先写动能 `T(q,dq)` 和势能 `V(q)`，定义拉格朗日量：
-
-`L(q,dq) = T - V`
-
-每个广义坐标满足：
-
-`d/dt(∂L/∂dqᵢ) - ∂L/∂qᵢ = tauᵢ`
-
-它的价值是：不必逐个画刚体受力图，只要能写出能量，就能系统地得到运动方程。
-
-## 4. 二连杆机械臂
-
-二维 2R 机械臂的状态为 `q=[q1,q2]`。动力学为：
-
-`M(q)ddq + c(q,dq) + g(q) = tau`
-
-重要性质：
-
-1. `M(q)` 对称且正定，所以可解 `M ddq = rhs`。
-2. 非对角元素表示两个关节的惯性耦合。
-3. 即使第二关节没有施力，第一个关节运动也可能带动它。
-4. 重力向量是势能对位形的梯度：`g(q)=∂V/∂q`。
-
-末端位置：
-
-`x = l1 cos(q1) + l2 cos(q1+q2)`
-
-`y = l1 sin(q1) + l2 sin(q1+q2)`
-
-## 5. 从微分方程到仿真
-
-积分器通常接收一阶状态方程。令 `x=[q,dq]`，则：
-
-`x_dot = [dq, M(q)⁻¹(tau-c-g-Bdq)]`
-
-代码中不要显式计算矩阵逆，使用 `numpy.linalg.solve(M, rhs)`，数值上更稳健。仓库使用四阶 Runge–Kutta（RK4）积分。
-
-## 6. 控制
-
-### 重力补偿
-
-`tau = g(q)` 可在理想模型中抵消重力，但不会自动回到目标位置。
-
-### PD 加重力补偿
-
-`tau = Kp(qd-q) - Kd dq + g(q)`
-
-比例项像弹簧，微分项像阻尼。
-
-### 计算力矩控制
-
-先设虚拟加速度：
-
-`v = ddq_d + Kd(dq_d-dq) + Kp(q_d-q)`
-
-再令：
-
-`tau = M(q)v + c(q,dq) + g(q) + B dq`
-
-模型准确时，非线性系统被转化为近似独立的二阶误差系统。
-
-## 7. 快速开始
-
-需要 Python 3.10+：
+需要 Python 3.10 或更高版本：
 
 ```bash
-pip install numpy matplotlib pytest
+git clone https://github.com/jerryzhu-yc/robot-dynamics-from-zero.git
+cd robot-dynamics-from-zero
+python -m venv .venv
+source .venv/bin/activate       # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+pytest -q
 python robot_dynamics.py pendulum
 python robot_dynamics.py gravity
 python robot_dynamics.py control
-pytest
 ```
 
-程序会把图保存到 `figures/`。
+图像输出在 `figures/`。
 
-## 8. 学习实验
+## 建议学习方式
 
-1. 把单摆长度加倍，比较振荡周期。
-2. 关闭阻尼，观察 RK4 步长对能量漂移的影响。
-3. 只给二连杆第一关节施力，观察第二关节的耦合运动。
-4. 在纯 PD、PD+重力补偿之间切换，比较稳态误差。
-5. 把控制器使用的质量改错 20%，观察计算力矩控制的鲁棒性。
+- 每周学习一章，先做公式推导，再运行代码；
+- 修改质量、长度、阻尼、时间步长和控制增益，解释曲线变化；
+- 每章至少完成两道习题；
+- 对任何公式都追问三件事：来源是什么、量纲是否正确、去掉这一项会怎样。
 
-## 学习建议
+## 符号约定
 
-每次只学一个概念：先预测物理行为，再运行代码，最后修改参数并解释曲线。能独立回答“这一项从哪里来、单位是什么、去掉会怎样”，才算真正理解。
+- (q, dot q, ddot q)：关节位置、速度与加速度；
+- (	au)：关节驱动力矩；
+- (M(q))：惯性矩阵；
+- (c(q,dot q))：科里奥利与离心项；
+- (g(q))：重力项；
+- 所有角度使用弧度，物理量使用 SI 单位。
 
-## License
+## 许可证
 
 MIT
