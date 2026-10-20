@@ -2,38 +2,38 @@
 
 ## 学习目标
 
-从能量系统推导单摆与多关节机械臂动力学。
+从能量系统推导单摆和多关节机械臂动力学。
 
-## 5.1 欧拉–拉格朗日方程
+定义拉格朗日量 $L=T-V$。每个广义坐标满足
 
-定义 $L=T-V$，每个广义坐标满足
+$$
+\frac{d}{dt}\left(\frac{\partial L}{\partial\dot q_i}\right)
+-\frac{\partial L}{\partial q_i}=\tau_i.
+$$
 
-$$rac{d}{dt}rac{partial L}{partialdot q_i}-rac{partial L}{partial q_i}=	au_i.$$
+粘性摩擦可写为广义阻力 $-B\dot q$。
 
-粘性摩擦可作为广义阻力 $-Bdot q$ 加入右侧。
+## 单摆推导
 
-## 5.2 单摆推导
+取
 
-取 $T=rac12ml^2dot q^2$、$V=mglsin q$，得到
+$$T=\frac12ml^2\dot q^2,\qquad V=mgl\sin q,$$
 
-$$ml^2ddot q+mglcos q=	au.$$
+代入得到
 
-若有阻尼 b，则再加 $bdot q$。这正是 Pendulum 类实现的模型。
+$$ml^2\ddot q+b\dot q+mgl\cos q=\tau.$$
 
-## 5.3 多自由度系统
+这正是 Pendulum 类实现的模型。
 
-对每个 $q_i$ 重复同一过程并整理，可得
+## 多自由度形式
 
-$$M(q)ddot q+c(q,dot q)+g(q)=	au.$$
+对每个 $q_i$ 应用同一方程并整理：
 
-拉格朗日法的优势是系统、适合符号推导；代价是表达式可能迅速膨胀。
+$$M(q)\ddot q+c(q,\dot q)+g(q)=\tau.$$
 
-## 推导检查表
-
-明确坐标零点和正方向；写出每个质心速度；检查势能参考面；逐项检查单位；在静止、无重力和单自由度极限下验证。
+推导时必须明确零点和正方向，写出每个质心速度，并进行量纲与极端情况检查。
 
 ## 习题
 
 1. 推导带阻尼单摆。
-2. 若单摆角度从竖直向下测量，重力项如何改变？
-3. 证明静止时逆动力学退化为重力补偿。
+2. 若角度从竖直向下测量，重力项如何改变？
